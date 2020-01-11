@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Group Chatroom - Socket.io study</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font: 13px Helvetica, Arial; }
+        #title{width: 100%; text-align: center; background: rgb(235, 235, 235); font-size: 1.5em; padding: 1%; margin-bottom: 1%;}
+        /* #chat_containter{width: 100vw; margin: 0 5%; padding: 0 5%;} */
+        #usr_name {width: 100%;  text-align: center; padding: 5px; line-height: 10px; height: 20px; margin: 0 auto;}
+        #usr_name_input{margin: 0 auto; border:0;}
+        #usr_name_input:focus{outline: none;}
+        form { background: rgb(151, 151, 151); padding: 3px; position:fixed; bottom: 0; width: 100%; }
+        form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+        form button { width: 9%; background: rgb(207, 207, 207); border: none; padding: 10px; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+      </style>
+</head>
+<body>
+    <div id="title">Group chatroom by MING TECH</div>
+    <div id="status">Who is online
+        <ul id="online_users">
+
+        </ul>
+    </div>
+    <div id="chat_containter">
+            <div id="usr_name">
+                    <span id="usr_name_text">User name</span>
+                    <input id="usr_name_input" type="text" value="">
+                </div>
+                <ul id="messages"></ul>
+                <form action="">
+                  <input id="m" autocomplete="off" /><button>Send</button>
+                </form>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+    $(function(){
+        var socket = io();
+        change_username();
+
+        $('form').submit(function(e){
+            if($("#m").val() != null && $("#m").val() != "") {
+                e.preventDefault;
+                if($("#usr_name_text").text() == "Please enter your nickname"){
+                    $('#messages').append($('<li>').text("User: " + $('#m').val()));
+                    socket.emit('chat message', $('#m').val());
+                }else{
+                    $('#messages').append($('<li>').text($("#usr_name_text").text() + ": " + $('#m').val()));
+                    socket.emit('chat message', $('#m').val());
+                }
+                $('#m').val('');
+                return false;
+            }else{
+                return false;
+            }  
+        });
+
+        // Receive message from other client
+        socket.on('chat message', function(msg,name){
+            $('#messages').append($('<li>').text(name + ': ' + msg));
+        });
+
+        // Receive connection status of clients
+        socket.on('connectivity', function(msg){
+            $('#messages').append($('<li>').text(msg));
+        });
+
+        socket.on('user status', function(users){
+
+        });
+
+
+        function change_username(){
+            socket.emit('user name', 'User');
+            $("#usr_name_input").css("display","none");
+            $("#usr_name_text").text("Please enter your nickname");
+
+            $("#usr_name_text").click(function(){
+                $("#usr_name_input").val("");
+                $("#usr_name_input").css("display","block");
+                $("#usr_name_input").focus();
+                $("#usr_name_text").css("display","none");
+            });
+
+            $("#usr_name_input").blur(function(){
+                if($("#usr_name_input").val()== null || $("#usr_name_input").val()== ""){
+                    $("#usr_name_text").text("Please enter your nickname");
+                }else{
+                    $("#usr_name_text").text($("#usr_name_input").val());
+                    socket.emit('user name', $("#usr_name_text").text());
+                }
+                $("#usr_name_text").css("display","block");
+                $("#usr_name_input").css("display","none");
+            });
+        }
+        
+    });
+    </script>
+</body>
+</html>
